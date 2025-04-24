@@ -1,33 +1,29 @@
 
-// This is a placeholder for actual barcode scanning implementation
-// In the future, this will integrate with ZXing or another barcode library
+import { BrowserMultiFormatReader, DecodeHintType } from '@zxing/library';
 
 export async function scanBarcodeFromImage(imageFile: File): Promise<string> {
-  // Currently returning a mock barcode for demo purposes
-  // In a real implementation, this would use ZXing to analyze the image
+  const reader = new BrowserMultiFormatReader();
   
-  return new Promise((resolve) => {
-    // Simulate processing time
-    setTimeout(() => {
-      // Mock implementation - in reality, this would analyze the image
-      // and return the actual barcode value
-      
-      // Generate random barcode for demo (would be replaced with actual scanning)
-      const mockBarcodes = [
-        '7891234567890',
-        '7891234567891',
-        '7891234567892',
-        '7891234567893',
-        '7891234567894'
-      ];
-      
-      const randomIndex = Math.floor(Math.random() * mockBarcodes.length);
-      resolve(mockBarcodes[randomIndex]);
-    }, 1500);
-  });
+  // Configure hints for better accuracy
+  const hints = new Map();
+  hints.set(DecodeHintType.TRY_HARDER, true);
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, ['EAN_13', 'EAN_8', 'CODE_128', 'CODE_39', 'UPC_A', 'UPC_E']);
+  reader.setHints(hints);
+
+  // Create an image URL from the file
+  const imageUrl = URL.createObjectURL(imageFile);
+  
+  try {
+    const result = await reader.decodeFromImageUrl(imageUrl);
+    URL.revokeObjectURL(imageUrl); // Clean up
+    return result.getText();
+  } catch (error) {
+    URL.revokeObjectURL(imageUrl); // Clean up
+    throw new Error('No barcode found in image');
+  }
 }
 
 export function isBarcodeValid(barcode: string): boolean {
-  // Simple validation - in reality would be more sophisticated
-  return barcode.length >= 8 && /^\d+$/.test(barcode);
+  // Basic validation - should be at least 8 digits
+  return /^\d{8,}$/.test(barcode);
 }

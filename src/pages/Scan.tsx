@@ -1,43 +1,11 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Barcode, Upload, Check, ShoppingCart } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-
-// Mock data to simulate database fetch based on barcode
-const mockProducts = [
-  { 
-    barcode: '7891234567890', 
-    name: 'Organic Banana Bundle', 
-    price: 4.99, 
-    image_url: 'https://images.unsplash.com/photo-1528825871115-3581a5387919?q=80&w=800&auto=format&fit=crop' 
-  },
-  { 
-    barcode: '7891234567891', 
-    name: 'Fresh Milk 1L', 
-    price: 2.49, 
-    image_url: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?q=80&w=800&auto=format&fit=crop' 
-  },
-  { 
-    barcode: '7891234567892', 
-    name: 'Whole Grain Bread', 
-    price: 3.29, 
-    image_url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=800&auto=format&fit=crop' 
-  },
-  { 
-    barcode: '7891234567893', 
-    name: 'Free Range Eggs (12pk)', 
-    price: 5.99, 
-    image_url: 'https://images.unsplash.com/photo-1506976785307-8732e854ad03?q=80&w=800&auto=format&fit=crop' 
-  },
-  { 
-    barcode: '7891234567894', 
-    name: 'Organic Apples (1kg)', 
-    price: 3.99, 
-    image_url: 'https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?q=80&w=800&auto=format&fit=crop' 
-  }
-];
+import { useToast } from '@/hooks/use-toast';
+import { scanBarcodeFromImage } from '@/utils/barcodeScanner';
+import { supabase } from '@/integrations/supabase/client';
+import { useCart } from '@/contexts/CartContext';
 
 const Scan: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -49,6 +17,7 @@ const Scan: React.FC = () => {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { addToCart } = useCart();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -65,30 +34,41 @@ const Scan: React.FC = () => {
     fileInputRef.current?.click();
   };
 
-  const handleScan = () => {
+  const handleScan = async () => {
     if (!selectedFile) return;
     
     setIsLoading(true);
-    
-    // Simulate barcode scanning with a timeout
-    setTimeout(() => {
-      // Pick a random mock product for demo purposes
-      const randomIndex = Math.floor(Math.random() * mockProducts.length);
-      const randomBarcode = mockProducts[randomIndex].barcode;
-      setBarcode(randomBarcode);
+    try {
+      // Scan barcode from image
+      const scannedBarcode = await scanBarcodeFromImage(selectedFile);
+      setBarcode(scannedBarcode);
       
-      // Fetch product data based on barcode (simulated)
-      const foundProduct = mockProducts.find(p => p.barcode === randomBarcode);
-      setProduct(foundProduct || null);
+      // Fetch product from Supabase
+      const { data: product, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('barcode', scannedBarcode)
+        .single();
+
+      if (error) throw error;
+      setProduct(product);
       
+    } catch (error) {
+      console.error('Scanning error:', error);
+      toast({
+        title: "Scanning failed",
+        description: "Could not detect a valid barcode in the image",
+        duration: 3000,
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleAddToCart = () => {
     if (!product) return;
     
-    // In a real app, this would add to cart in state/context/backend
+    addToCart(product);
     setIsAddedToCart(true);
     
     toast({
@@ -97,7 +77,7 @@ const Scan: React.FC = () => {
       duration: 3000,
     });
     
-    // Reset after 2 seconds to allow for another scan
+    // Reset after 2 seconds
     setTimeout(() => {
       setSelectedFile(null);
       setPreviewUrl(null);
