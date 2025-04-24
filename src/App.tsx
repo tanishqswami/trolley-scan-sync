@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Scan from "./pages/Scan";
 import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
+import { CartProvider } from "./contexts/CartContext";
 
 // Create a new QueryClient instance outside the component
 const queryClient = new QueryClient({
@@ -25,20 +26,22 @@ const App = () => {
   return (
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route element={<Layout />}>
-                <Route path="/" element={<Home />} />
-                <Route path="/scan" element={<Scan />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/scan" element={<Scan />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
       </QueryClientProvider>
     </React.StrictMode>
   );
