@@ -1,15 +1,13 @@
 
-import { BrowserMultiFormatReader, DecodeHintType } from '@zxing/library';
+import { BrowserMultiFormatReader } from 'zxing';
 
 export async function scanBarcodeFromImage(imageFile: File): Promise<string> {
   const reader = new BrowserMultiFormatReader();
   
-  // Configure hints for better accuracy
-  const hints = new Map();
-  hints.set(DecodeHintType.TRY_HARDER, true);
-  hints.set(DecodeHintType.POSSIBLE_FORMATS, ['EAN_13', 'EAN_8', 'CODE_128', 'CODE_39', 'UPC_A', 'UPC_E']);
-  reader.setHints(hints);
-
+  // Configure for better accuracy - using the available API in the zxing package
+  reader.timeBetweenScansMillis = 100;
+  reader.possibleFormats = ["EAN_13", "EAN_8", "CODE_128", "CODE_39", "UPC_A", "UPC_E"];
+  
   // Create an image URL from the file
   const imageUrl = URL.createObjectURL(imageFile);
   
